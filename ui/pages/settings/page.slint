@@ -1,0 +1,101 @@
+// SPDX-License-Identifier: MIT
+
+import { Theme, Images, ControlSize } from "@ui/theme.slint";
+import { Menu } from "@ui/menu.slint";
+import { MenuItem } from "@ui/menu_item.slint";
+import { Navigate } from "../../gen/navigate.slint";
+import { Sp } from "../../globals.slint";
+import { PageHeader, SectionLabel, BodyText, MutedText, Gaps } from "../../components/common.slint";
+
+export component SettingsPage inherits Rectangle {
+    background: Theme.palette-background;
+
+    property <image> no-icon;
+
+    Flickable {
+        width: parent.width;
+        height: parent.height;
+        viewport-height: content.preferred-height;
+
+        content := VerticalLayout {
+            width: parent.width;
+            padding-left: Gaps.side;
+            padding-right: Gaps.side;
+            padding-top: Gaps.top;
+            padding-bottom: Gaps.bottom;
+            spacing: Theme.spacing-lg;
+
+            PageHeader {
+                title: "Settings";
+                back => {
+                    Navigate.backward();
+                }
+            }
+
+            SectionLabel {
+                text: "NETWORK";
+            }
+
+            Menu {
+                full-width: true;
+                MenuItem {
+                    label: "Mainnet";
+                    subtitle: "sp1… addresses";
+                    selected: !Sp.testnet;
+                    end-icon: !Sp.testnet ? Images.icon("check", 20px) : root.no-icon;
+                    clicked => {
+                        Sp.set-network(false);
+                    }
+                }
+                MenuItem {
+                    label: "Testnet / Signet";
+                    subtitle: "tsp1… addresses, for testing only";
+                    selected: Sp.testnet;
+                    end-icon: Sp.testnet ? Images.icon("check", 20px) : root.no-icon;
+                    clicked => {
+                        Sp.set-network(true);
+                    }
+                }
+            }
+
+            MutedText {
+                text: "Each network uses its own keys (BIP44 coin type 0' or 1'). Labels are shared between networks.";
+            }
+
+            SectionLabel {
+                text: "IDENTITY";
+            }
+
+            Menu {
+                full-width: true;
+                MenuItem {
+                    label: "Master fingerprint";
+                    trailing-text: Sp.fingerprint;
+                    interactive: false;
+                }
+                MenuItem {
+                    label: "Derivation";
+                    trailing-text: Sp.account-path;
+                    interactive: false;
+                }
+                MenuItem {
+                    label: "Labels";
+                    trailing-text: Sp.labels.length + " of " + Sp.max-labels;
+                    interactive: false;
+                }
+            }
+
+            SectionLabel {
+                text: "ABOUT";
+            }
+
+            BodyText {
+                text: "Keys are derived from SP Receive Card's app seed, which Passport derives from your seed words for this app only. Restoring your Passport seed restores this identity; labels come back with Magic Backup.";
+            }
+
+            MutedText {
+                text: "Receive only. This version cannot sign or send, and the spend key never leaves Passport. The keys differ from the BIP352 keys other wallets derive directly from your seed words.";
+            }
+        }
+    }
+}

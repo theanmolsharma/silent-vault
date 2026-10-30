@@ -1,0 +1,354 @@
+// SPDX-License-Identifier: MIT
+
+import { Theme, UISize, Images, ControlSize, ButtonVariant } from "@ui/theme.slint";
+import { Button } from "@ui/button.slint";
+import { Card } from "@ui/card.slint";
+import { Chip, ChipVariant, ChipColor, ChipSize } from "@ui/chip.slint";
+import { IconButton, IconButtonVariant, IconButtonSize } from "@ui/icon_button.slint";
+import { Menu } from "@ui/menu.slint";
+import { MenuItem } from "@ui/menu_item.slint";
+import { Spinner, SpinnerSize } from "@ui/spinner.slint";
+import { Navigate } from "../gen/navigate.slint";
+import { Sp, Phase } from "../globals.slint";
+import { PageHeader, QrPlate, SectionLabel, BodyText, MutedText, Gaps } from "../components/common.slint";
+
+component Busy inherits VerticalLayout {
+    in property <string> message;
+    padding: Gaps.side;
+    spacing: Theme.spacing-lg;
+    alignment: center;
+
+    HorizontalLayout {
+        alignment: center;
+        Spinner {
+            size: SpinnerSize.lg;
+        }
+    }
+
+    BodyText {
+        text: root.message;
+        horizontal-alignment: center;
+    }
+}
+
+component Welcome inherits Flickable {
+    viewport-height: content.preferred-height;
+
+    content := VerticalLayout {
+        width: root.width;
+        padding-left: Gaps.side;
+        padding-right: Gaps.side;
+        padding-top: Gaps.top;
+        padding-bottom: Gaps.bottom;
+        spacing: Theme.spacing-lg;
+
+        Text {
+            text: "SP Receive Card";
+            color: Theme.palette-foreground;
+            font-family: Theme.font-primary;
+            font-size: Theme.font-size-title;
+            font-weight: Theme.font-weight-bold;
+        }
+
+        BodyText {
+            text: "One reusable Bitcoin address that keeps your payments private.";
+        }
+
+        Card {
+            size: ControlSize.sm;
+            eyebrow: "SILENT PAYMENTS (BIP352)";
+            title: "Share one address";
+            body: "Each sender pays to a fresh output that nobody else can link to your address or to other payments.";
+        }
+
+        Card {
+            size: ControlSize.sm;
+            eyebrow: "YOUR KEYS";
+            title: "Derived from this Passport";
+            body: "Your receiving keys come from Passport seed material reserved for this app. Restoring the same Passport seed restores them. No keys are stored by the app.";
+        }
+
+        Card {
+            size: ControlSize.sm;
+            eyebrow: "THIS VERSION";
+            title: "Receive only";
+            body: "SP Receive Card shows addresses and can export watch-only data for a scanning wallet. It cannot send or sign transactions yet.";
+        }
+
+        Button {
+            text: "Create receiving identity";
+            size: ControlSize.lg;
+            full-width: true;
+            clicked => {
+                Sp.begin-setup();
+            }
+        }
+
+        MutedText {
+            text: "Passport will ask you to allow SP Receive Card to use its app seed.";
+            horizontal-alignment: center;
+        }
+    }
+}
+
+component Created inherits VerticalLayout {
+    padding-left: Gaps.side;
+    padding-right: Gaps.side;
+    padding-top: Gaps.top;
+    padding-bottom: Gaps.bottom;
+    spacing: Theme.spacing-lg;
+    alignment: center;
+
+    HorizontalLayout {
+        alignment: center;
+        Rectangle {
+            width: 96px;
+            height: 96px;
+            border-radius: 48px;
+            background: Theme.color-success.with-alpha(0.15);
+            Image {
+                width: 48px;
+                height: 48px;
+                source: Images.icon("check", 48px);
+                colorize: Theme.color-success;
+            }
+        }
+    }
+
+    Text {
+        text: "Receiving identity created";
+        color: Theme.palette-foreground;
+        font-family: Theme.font-primary;
+        font-size: Theme.font-size-title;
+        font-weight: Theme.font-weight-bold;
+        horizontal-alignment: center;
+        wrap: word-wrap;
+    }
+
+    BodyText {
+        text: "Your Silent Payment address is ready on " + Sp.network-name + ". It is recreated from your Passport seed every time the app opens.";
+        horizontal-alignment: center;
+    }
+
+    MutedText {
+        text: "Identity fingerprint " + Sp.fingerprint;
+        horizontal-alignment: center;
+    }
+
+    Button {
+        text: "Show my address";
+        size: ControlSize.lg;
+        full-width: true;
+        clicked => {
+            Sp.finish-setup();
+        }
+    }
+}
+
+component Failed inherits VerticalLayout {
+    padding: Gaps.side;
+    spacing: Theme.spacing-lg;
+    alignment: center;
+
+    HorizontalLayout {
+        alignment: center;
+        Image {
+            width: 48px;
+            height: 48px;
+            source: Images.icon("circle-alert", 48px);
+            colorize: Theme.palette-danger;
+        }
+    }
+
+    Text {
+        text: Sp.failure-title;
+        color: Theme.palette-foreground;
+        font-family: Theme.font-primary;
+        font-size: Theme.font-size-title;
+        font-weight: Theme.font-weight-bold;
+        horizontal-alignment: center;
+        wrap: word-wrap;
+    }
+
+    BodyText {
+        text: Sp.failure-message;
+        horizontal-alignment: center;
+    }
+
+    Button {
+        text: "Try again";
+        size: ControlSize.lg;
+        full-width: true;
+        clicked => {
+            Sp.retry();
+        }
+    }
+}
+
+component Ready inherits Flickable {
+    viewport-height: content.preferred-height;
+
+    content := VerticalLayout {
+        width: root.width;
+        padding-left: Gaps.side;
+        padding-right: Gaps.side;
+        padding-top: Gaps.top;
+        padding-bottom: Gaps.bottom;
+        spacing: Theme.spacing-lg;
+
+        PageHeader {
+            title: "SP Receive Card";
+            show-back: false;
+            trailing-icon: "settings";
+            trailing-label: "Settings";
+            trailing => {
+                Navigate.settings({});
+            }
+        }
+
+        if Sp.testnet: HorizontalLayout {
+            alignment: start;
+            Chip {
+                text: Sp.network-name;
+                variant: ChipVariant.soft;
+                color: ChipColor.warning;
+                size: ChipSize.sm;
+            }
+        }
+
+        if Sp.identity-changed: VerticalLayout {
+            spacing: Theme.spacing-sm;
+            Card {
+                size: ControlSize.sm;
+                eyebrow: "IDENTITY CHANGED";
+                title: "Different Passport seed";
+                body: "Your labels were created under another seed. The addresses shown now belong to this Passport's current seed. Payments to the old addresses are not visible here.";
+                accent-color: Theme.palette-danger;
+                selected: true;
+            }
+            Button {
+                text: "Use this identity";
+                variant: ButtonVariant.secondary;
+                full-width: true;
+                clicked => {
+                    Sp.acknowledge-identity-change();
+                }
+            }
+        }
+
+        HorizontalLayout {
+            alignment: center;
+            TouchArea {
+                width: qr.width;
+                height: qr.height;
+                clicked => {
+                    Sp.select-address(0);
+                    Navigate.address({});
+                }
+                qr := QrPlate {
+                    code: Sp.primary-qr;
+                }
+            }
+        }
+
+        VerticalLayout {
+            spacing: Theme.spacing-xs;
+            SectionLabel {
+                text: "SILENT PAYMENT ADDRESS";
+                horizontal-alignment: center;
+            }
+            Text {
+                text: Sp.primary-address;
+                color: Theme.palette-foreground;
+                font-family: "Source Code Pro";
+                font-size: Theme.font-size-subtitle;
+                horizontal-alignment: center;
+                wrap: char-wrap;
+            }
+        }
+
+        Button {
+            text: "Show full address";
+            variant: ButtonVariant.secondary;
+            full-width: true;
+            clicked => {
+                Sp.select-address(0);
+                Navigate.address({});
+            }
+        }
+
+        SectionLabel {
+            text: "LABELS";
+        }
+
+        if Sp.labels.length == 0: MutedText {
+            text: "No labels yet. Create one per purpose, like Donations or Business, to tell incoming payments apart.";
+        }
+
+        if Sp.labels.length > 0: Menu {
+            full-width: true;
+            for row in Sp.labels: MenuItem {
+                label: row.name;
+                subtitle: row.short-address;
+                end-icon: Images.icon("chevron-right", 20px);
+                clicked => {
+                    Sp.select-address(row.m);
+                    Navigate.address({});
+                }
+            }
+        }
+
+        Button {
+            text: Sp.can-add-label ? "New label" : "Label limit reached";
+            variant: ButtonVariant.secondary;
+            start-icon: Images.icon("plus", 20px);
+            full-width: true;
+            disabled: !Sp.can-add-label;
+            clicked => {
+                Sp.start-create-label();
+                Navigate.label-editor({});
+            }
+        }
+
+        Button {
+            text: "Export watch-only";
+            variant: ButtonVariant.tertiary;
+            start-icon: Images.icon("lock", 20px);
+            full-width: true;
+            clicked => {
+                Navigate.watch-only({});
+            }
+        }
+    }
+}
+
+export component HomePage inherits Rectangle {
+    background: Theme.palette-background;
+
+    if Sp.phase == Phase.loading: Busy {
+        width: parent.width;
+        height: parent.height;
+        message: "Opening…";
+    }
+    if Sp.phase == Phase.deriving: Busy {
+        width: parent.width;
+        height: parent.height;
+        message: "Deriving your receiving keys…";
+    }
+    if Sp.phase == Phase.welcome: Welcome {
+        width: parent.width;
+        height: parent.height;
+    }
+    if Sp.phase == Phase.created: Created {
+        width: parent.width;
+        height: parent.height;
+    }
+    if Sp.phase == Phase.failed: Failed {
+        width: parent.width;
+        height: parent.height;
+    }
+    if Sp.phase == Phase.ready: Ready {
+        width: parent.width;
+        height: parent.height;
+    }
+}

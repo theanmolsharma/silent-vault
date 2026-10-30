@@ -1,0 +1,37 @@
+// SPDX-FileCopyrightText: 2026 Foundation Devices, Inc. <hello@foundation.xyz>
+// SPDX-License-Identifier: MIT
+
+import {
+    Theme,
+    UISize,
+    Images,
+} from "@ui/theme.slint";
+import { Toast, ToastVariant, ToastPosition } from "@ui/toast.slint";
+import { Router } from "gen/router.slint";
+import { Sp, Phase, ExportStage, LabelRow } from "globals.slint";
+
+export { Theme, Images, Sp, Phase, ExportStage, LabelRow }
+export * from "gen/exports.slint";
+
+export component AppWindow inherits Window {
+    title: "SP Receive Card";
+    preferred-width: UISize.screen-width;
+    preferred-height: UISize.screen-height;
+    background: Theme.palette-background;
+
+    Router { }
+
+    // Short confirmations ("Label created") and non-fatal errors.
+    // Toast fills the window and places its card at the bottom; it only takes touches on the card.
+    if Sp.notice-open: Toast {
+        y: UISize.control-center-status-bar-height;
+        width: parent.width;
+        height: parent.height - UISize.control-center-status-bar-height;
+        message: Sp.notice;
+        variant: Sp.notice-is-error ? ToastVariant.error : ToastVariant.success;
+        position: ToastPosition.bottom;
+        dismissed => {
+            Sp.notice-open = false;
+        }
+    }
+}
