@@ -1,0 +1,196 @@
+// SPDX-License-Identifier: MIT
+
+import { Theme, Images, ControlSize, ButtonVariant } from "@ui/theme.slint";
+import { Button } from "@ui/button.slint";
+import { Dialog, DialogVariant } from "@ui/dialog.slint";
+import { Navigate } from "../../gen/navigate.slint";
+import { Sp } from "../../globals.slint";
+import { PageHeader, QrPlate, AddressGroups, SectionLabel, BodyText, MutedText, Gaps } from "../../components/common.slint";
+
+// Receiving screen for one address: the unlabelled address (detail-id 0) or a label.
+export component AddressPage inherits Rectangle {
+    background: Theme.palette-background;
+
+    property <bool> is-label: Sp.detail-id > 0;
+    property <bool> fullscreen-qr: false;
+    property <bool> confirm-delete: false;
+
+    Flickable {
+        width: parent.width;
+        height: parent.height;
+        viewport-height: content.preferred-height;
+
+        content := VerticalLayout {
+            width: parent.width;
+            padding-left: Gaps.side;
+            padding-right: Gaps.side;
+            padding-top: Gaps.top;
+            padding-bottom: Gaps.bottom;
+            spacing: Theme.spacing-lg;
+
+            PageHeader {
+                title: Sp.detail-title;
+                back => {
+                    Navigate.backward();
+                }
+            }
+
+            MutedText {
+                text: Sp.detail-subtitle;
+            }
+
+            HorizontalLayout {
+                alignment: center;
+                TouchArea {
+                    width: plate.width;
+                    height: plate.height;
+                    clicked => {
+                        root.fullscreen-qr = true;
+                    }
+                    plate := QrPlate {
+                        code: Sp.detail-qr;
+                    }
+                }
+            }
+
+            SectionLabel {
+                text: "ADDRESS";
+            }
+
+            AddressGroups {
+                groups: Sp.detail-groups;
+            }
+
+            MutedText {
+                text: "Passport has no clipboard. Let the sender scan the QR code, or compare every group of characters with their screen.";
+            }
+
+            Button {
+                text: "Show QR full screen";
+                variant: ButtonVariant.secondary;
+                full-width: true;
+                clicked => {
+                    root.fullscreen-qr = true;
+                }
+            }
+
+            if root.is-label: HorizontalLayout {
+                spacing: Theme.spacing-md;
+                Button {
+                    horizontal-stretch: 1;
+                    text: "Rename";
+                    variant: ButtonVariant.secondary;
+                    start-icon: Images.icon("pencil", 20px);
+                    full-width: true;
+                    clicked => {
+                        Sp.start-rename-label(Sp.detail-id);
+                        Navigate.label-editor({});
+                    }
+                }
+                Button {
+                    horizontal-stretch: 1;
+                    text: "Delete";
+                    variant: ButtonVariant.danger;
+                    start-icon: Images.icon("trash-2", 20px);
+                    full-width: true;
+                    clicked => {
+                        root.confirm-delete = true;
+                    }
+                }
+            }
+        }
+    }
+
+    // Large code for scanning from across a table. Tap anywhere to close.
+    if root.fullscreen-qr: Rectangle {
+        width: parent.width;
+        height: parent.height;
+        background: #ffffff;
+
+        VerticalLayout {
+            padding: Gaps.side;
+            spacing: Theme.spacing-lg;
+            alignment: center;
+
+            Text {
+                text: Sp.detail-title;
+                color: #231f20;
+                font-family: Theme.font-primary;
+                font-size: Theme.font-size-title;
+                font-weight: Theme.font-weight-bold;
+                horizontal-alignment: center;
+                overflow: elide;
+            }
+
+            HorizontalLayout {
+                alignment: center;
+                Image {
+                    width: Sp.detail-qr-large.width * 1px;
+                    height: Sp.detail-qr-large.height * 1px;
+                    source: Sp.detail-qr-large;
+                    image-rendering: pixelated;
+                }
+            }
+
+            Text {
+                text: "Tap to close";
+                color: #959394;
+                font-family: Theme.font-primary;
+                font-size: Theme.font-size-helper;
+                horizontal-alignment: center;
+            }
+        }
+
+        TouchArea {
+            clicked => {
+                root.fullscreen-qr = false;
+            }
+        }
+    }
+
+    if root.confirm-delete: Dialog {
+        width: parent.width;
+        height: parent.height;
+        variant: DialogVariant.danger;
+        dismissed => {
+            root.confirm-delete = false;
+        }
+
+        Text {
+            text: "Delete \"" + Sp.detail-title + "\"?";
+            color: Theme.palette-foreground;
+            font-family: Theme.font-primary;
+            font-size: Theme.font-size-title;
+            font-weight: Theme.font-weight-bold;
+            wrap: word-wrap;
+        }
+
+        BodyText {
+            text: "The label disappears from this list. Payments sent to its address still belong to you, and scanning wallets keep finding them: label numbers are never reused.";
+        }
+
+        HorizontalLayout {
+            spacing: Theme.spacing-md;
+            Button {
+                horizontal-stretch: 1;
+                text: "Cancel";
+                variant: ButtonVariant.secondary;
+                full-width: true;
+                clicked => {
+                    root.confirm-delete = false;
+                }
+            }
+            Button {
+                horizontal-stretch: 1;
+                text: "Delete";
+                variant: ButtonVariant.danger;
+                full-width: true;
+                clicked => {
+                    root.confirm-delete = false;
+                    Sp.delete-label(Sp.detail-id);
+                    Navigate.backward();
+                }
+            }
+        }
+    }
+}

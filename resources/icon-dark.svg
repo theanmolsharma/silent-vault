@@ -1,0 +1,17 @@
+<svg width="110" height="110" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- SP Receive Card (dark theme). No background element: the launcher draws its own badge plate behind
+       the glyph (SDK migration guide, icon rules). A card with a QR-style finder corner and an
+       incoming arrow. -->
+  <g transform="translate(36 36) scale(0.72)">
+    <rect x="12" y="40" width="232" height="176" rx="28" fill="#F8FAFC"/>
+    <rect x="40" y="68" width="64" height="64" rx="10" fill="#0B1220"/>
+    <rect x="54" y="82" width="36" height="36" rx="5" fill="#F8FAFC"/>
+    <rect x="64" y="92" width="16" height="16" rx="2" fill="#0B1220"/>
+    <rect x="40" y="152" width="20" height="20" rx="3" fill="#0B1220"/>
+    <rect x="68" y="152" width="20" height="20" rx="3" fill="#0B1220"/>
+    <rect x="40" y="180" width="48" height="12" rx="3" fill="#0B1220"/>
+    <path d="M176 70V150" stroke="#FFA94D" stroke-width="18" stroke-linecap="round"/>
+    <path d="M144 120L176 152L208 120" stroke="#FFA94D" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M136 186H216" stroke="#0B1220" stroke-width="14" stroke-linecap="round"/>
+  </g>
+</svg>

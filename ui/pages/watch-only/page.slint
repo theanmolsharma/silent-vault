@@ -1,0 +1,160 @@
+// SPDX-License-Identifier: MIT
+
+import { Theme, Images, ControlSize, ButtonVariant } from "@ui/theme.slint";
+import { Button } from "@ui/button.slint";
+import { Card } from "@ui/card.slint";
+import { SlideToConfirm } from "@ui/slide_to_confirm.slint";
+import { Spinner, SpinnerSize } from "@ui/spinner.slint";
+import { Navigate } from "../../gen/navigate.slint";
+import { Sp, ExportStage } from "../../globals.slint";
+import { PageHeader, QrPlate, SectionLabel, BodyText, MutedText, Gaps } from "../../components/common.slint";
+
+// Watch-only export: warning -> slide to confirm -> system PIN prompt -> BIP392 descriptor.
+// The descriptor contains the scan private key. Rust clears it when the user leaves this page,
+// presses Done, or after a timeout; it is never written to storage.
+export component WatchOnlyPage inherits Rectangle {
+    background: Theme.palette-background;
+
+    function leave() {
+        Sp.clear-export();
+        Navigate.backward();
+    }
+
+    // The slider lives outside the Flickable: a Flickable takes over horizontal drags and would
+    // cancel the slide gesture.
+    VerticalLayout {
+        padding-left: Gaps.side;
+        padding-right: Gaps.side;
+        padding-top: Gaps.top;
+        padding-bottom: Gaps.bottom;
+        spacing: Theme.spacing-lg;
+
+        PageHeader {
+            title: "Watch-only export";
+            back => {
+                root.leave();
+            }
+        }
+
+        Flickable {
+            vertical-stretch: 1;
+            viewport-height: content.preferred-height;
+
+            content := VerticalLayout {
+                width: parent.width;
+                spacing: Theme.spacing-lg;
+
+                if Sp.export-stage == ExportStage.intro || Sp.export-stage == ExportStage.failed: VerticalLayout {
+                    spacing: Theme.spacing-lg;
+
+                    Card {
+                        size: ControlSize.sm;
+                        icon: Images.icon("circle-alert", 24px);
+                        eyebrow: "SENSITIVE";
+                        title: "This reveals your scan private key";
+                        body: "Anyone who gets it can see every payment you receive, to every label, for as long as they have it. It cannot spend: the spend key never leaves this Passport.";
+                        accent-color: Theme.palette-danger;
+                        selected: true;
+                    }
+
+                    BodyText {
+                        text: "Only import it into a scanning wallet you trust. The export is a standard BIP392 descriptor shown as a QR code. Nothing is saved on this Passport.";
+                    }
+
+                    if Sp.export-stage == ExportStage.failed: Card {
+                        size: ControlSize.sm;
+                        title: "PIN check unavailable";
+                        body: Sp.export-error;
+                        accent-color: Theme.palette-danger;
+                    }
+                }
+
+                if Sp.export-stage == ExportStage.verifying: VerticalLayout {
+                    spacing: Theme.spacing-lg;
+                    alignment: center;
+                    HorizontalLayout {
+                        alignment: center;
+                        Spinner {
+                            size: SpinnerSize.lg;
+                        }
+                    }
+                    BodyText {
+                        text: "Enter your Passport PIN to continue.";
+                        horizontal-alignment: center;
+                    }
+                }
+
+                if Sp.export-stage == ExportStage.shown: VerticalLayout {
+                    spacing: Theme.spacing-lg;
+
+                    HorizontalLayout {
+                        alignment: center;
+                        QrPlate {
+                            code: Sp.export-qr;
+                        }
+                    }
+
+                    VerticalLayout {
+                        spacing: Theme.spacing-xs;
+                        SectionLabel {
+                            text: "FORMAT";
+                        }
+                        BodyText {
+                            text: "BIP392 sp() descriptor · " + Sp.export-network;
+                        }
+                        MutedText {
+                            text: "Key origin " + Sp.export-fingerprint + " / " + Sp.export-path + ". Contains the scan private key and the spend public key.";
+                        }
+                    }
+
+                    VerticalLayout {
+                        spacing: Theme.spacing-xs;
+                        SectionLabel {
+                            text: "LABELS";
+                        }
+                        BodyText {
+                            text: Sp.export-label-hint;
+                        }
+                        for line in Sp.export-label-lines: MutedText {
+                            text: line;
+                        }
+                    }
+
+                    VerticalLayout {
+                        spacing: Theme.spacing-xs;
+                        SectionLabel {
+                            text: "DESCRIPTOR";
+                        }
+                        Text {
+                            text: Sp.export-descriptor;
+                            color: Theme.palette-foreground;
+                            font-family: "Source Code Pro";
+                            font-size: Theme.font-size-helper;
+                            wrap: char-wrap;
+                        }
+                    }
+                }
+            }
+        }
+
+        if Sp.export-stage == ExportStage.intro || Sp.export-stage == ExportStage.failed: SlideToConfirm {
+            max-height: self.preferred-height;
+            thumb-width: 156px;
+            label: "Reveal";
+            hint: "Slide right";
+            confirmed-label: "Enter PIN";
+            activated => {
+                Sp.request-export();
+            }
+        }
+
+        if Sp.export-stage == ExportStage.shown: Button {
+            text: "Done";
+            size: ControlSize.lg;
+            full-width: true;
+            clicked => {
+                root.leave();
+            }
+        }
+    }
+}

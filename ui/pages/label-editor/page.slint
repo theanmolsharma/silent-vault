@@ -1,0 +1,91 @@
+// SPDX-License-Identifier: MIT
+
+import { Theme, ControlSize, ButtonVariant } from "@ui/theme.slint";
+import { Button } from "@ui/button.slint";
+import { Chip, ChipVariant, ChipSize } from "@ui/chip.slint";
+import { Input } from "@ui/input.slint";
+import { Navigate } from "../../gen/navigate.slint";
+import { Sp } from "../../globals.slint";
+import { PageHeader, SectionLabel, MutedText, Gaps } from "../../components/common.slint";
+
+// Create a label, or rename one (Sp.editor-renaming).
+export component LabelEditorPage inherits Rectangle {
+    background: Theme.palette-background;
+
+    property <[string]> examples: ["Personal", "Donations", "Business", "Conference", "Open-source contributions"];
+
+    function save() {
+        if Sp.save-label(name.value) {
+            Navigate.backward();
+        }
+    }
+
+    Flickable {
+        width: parent.width;
+        height: parent.height;
+        viewport-height: content.preferred-height;
+
+        content := VerticalLayout {
+            width: parent.width;
+            padding-left: Gaps.side;
+            padding-right: Gaps.side;
+            padding-top: Gaps.top;
+            padding-bottom: Gaps.bottom;
+            spacing: Theme.spacing-lg;
+
+            PageHeader {
+                title: Sp.editor-renaming ? "Rename label" : "New label";
+                back => {
+                    Navigate.backward();
+                }
+            }
+
+            name := Input {
+                label: "Label name";
+                placeholder: "e.g. Donations";
+                value: Sp.editor-initial;
+                error: Sp.editor-error;
+                clearable: true;
+                submitted(text) => {
+                    root.save();
+                }
+            }
+
+            if !Sp.editor-renaming: VerticalLayout {
+                spacing: Theme.spacing-sm;
+                SectionLabel {
+                    text: "SUGGESTIONS";
+                }
+                for row-index in ceil(root.examples.length / 2): HorizontalLayout {
+                    spacing: Theme.spacing-sm;
+                    alignment: start;
+                    for col-index in 2: Chip {
+                        property <int> index: row-index * 2 + col-index;
+                        visible: self.index < root.examples.length;
+                        text: self.index < root.examples.length ? root.examples[self.index] : "";
+                        variant: ChipVariant.outlined;
+                        size: ChipSize.md;
+                        clicked => {
+                            name.value = self.text;
+                        }
+                    }
+                }
+            }
+
+            MutedText {
+                text: Sp.editor-renaming
+                    ? "Renaming changes only what you see. The address stays the same."
+                    : "Each label gets its own address. Anyone who sees two of your addresses can tell they belong to the same person: labels sort your payments, they do not create separate identities.";
+            }
+
+            Button {
+                text: Sp.editor-renaming ? "Save" : "Create label";
+                size: ControlSize.lg;
+                full-width: true;
+                clicked => {
+                    root.save();
+                }
+            }
+        }
+    }
+}

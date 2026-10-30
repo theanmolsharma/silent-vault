@@ -1,0 +1,98 @@
+// SPDX-License-Identifier: MIT
+
+// State pushed from Rust (src/app.rs) and the actions pages invoke. Pages never hold key
+// material themselves; the export descriptor lives here only while the export screen shows it.
+
+export enum Phase {
+    loading,
+    // First launch: explanation and "Create identity".
+    welcome,
+    // Waiting for the app-seed permission and key derivation.
+    deriving,
+    // Identity created; success screen before the home screen.
+    created,
+    ready,
+    failed,
+}
+
+export enum ExportStage {
+    // Warning and slide-to-confirm.
+    intro,
+    // System PIN prompt is open.
+    verifying,
+    shown,
+    failed,
+}
+
+export struct LabelRow {
+    m: int,
+    name: string,
+    short-address: string,
+}
+
+export global Sp {
+    in property <Phase> phase: Phase.loading;
+    in property <string> failure-title;
+    in property <string> failure-message;
+    // The seed-derived identity differs from the one the saved labels were created under.
+    in property <bool> identity-changed;
+
+    in property <string> notice;
+    in property <bool> notice-is-error;
+    in-out property <bool> notice-open;
+
+    in property <string> network-name;
+    in property <bool> testnet;
+    in property <string> fingerprint;
+    in property <string> account-path;
+    in property <string> primary-address;
+    in property <image> primary-qr;
+
+    in property <[LabelRow]> labels;
+    in property <bool> can-add-label: true;
+    in property <int> max-labels;
+
+    // Address details page. detail-id 0 is the unlabelled address; otherwise it is the label m.
+    in property <int> detail-id;
+    in property <string> detail-title;
+    in property <string> detail-subtitle;
+    in property <string> detail-address;
+    in property <[string]> detail-groups;
+    in property <image> detail-qr;
+    // Same code rendered larger for the full-screen view.
+    in property <image> detail-qr-large;
+
+    // Label editor page.
+    in property <bool> editor-renaming;
+    in property <int> editor-m;
+    in property <string> editor-initial;
+    in property <string> editor-error;
+
+    // Watch-only export page.
+    in property <ExportStage> export-stage: ExportStage.intro;
+    in property <string> export-descriptor;
+    in property <image> export-qr;
+    in property <string> export-network;
+    in property <string> export-path;
+    in property <string> export-fingerprint;
+    in property <string> export-label-hint;
+    in property <[string]> export-label-lines;
+    in property <string> export-error;
+
+    callback begin-setup();
+    callback finish-setup();
+    callback retry();
+    callback acknowledge-identity-change();
+
+    callback select-address(int);
+    callback start-create-label();
+    callback start-rename-label(int);
+    // Returns true when saved; on failure editor-error explains why.
+    callback save-label(string) -> bool;
+    callback delete-label(int);
+
+    callback request-export();
+    callback clear-export();
+
+    callback set-network(bool /* testnet */);
+}

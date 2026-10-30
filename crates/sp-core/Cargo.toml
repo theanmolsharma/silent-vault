@@ -1,0 +1,31 @@
+[package]
+name = "sp-core"
+version = "0.1.0"
+edition = "2021"
+description = "BIP352 Silent Payments receive-side logic for SP Receive Card (no KeyOS dependencies)"
+license = "MIT"
+publish = false
+
+# Everything in [dependencies] must build for `armv7a-unknown-xous-elf` (Passport Prime) as well
+# as for the host (simulator and tests). All of these are pure Rust, so no C cross-compiler is
+# needed for the device build.
+[dependencies]
+bech32 = { version = "0.11", default-features = false, features = ["alloc"] }
+# Same major version the KeyOS security API uses.
+bip39 = { version = "2.1", default-features = false, features = ["std", "zeroize"] }
+bip32 = { version = "0.5", default-features = false, features = ["alloc", "secp256k1"] }
+k256 = { version = "0.13", default-features = false, features = ["arithmetic", "std"] }
+# Same version and features as the KeyOS platform crate.
+qrcode = { version = "0.12", default-features = false }
+serde = { version = "1", default-features = false, features = ["derive", "std"] }
+serde_json = { version = "1", default-features = false, features = ["std"] }
+sha2 = { version = "0.10", default-features = false }
+zeroize = { version = "1.8", default-features = false, features = ["alloc"] }
+
+# Host-only test oracles. These are independent implementations used to cross-check our output;
+# none of them is linked into the app.
+[dev-dependencies]
+bitcoin = "0.32"
+hex = "0.4"
+rqrr = "0.11"
+silentpayments = "0.8"

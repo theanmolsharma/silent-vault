@@ -1,0 +1,136 @@
+// SPDX-License-Identifier: MIT
+
+import { Theme, UISize, Images } from "@ui/theme.slint";
+import { IconButton, IconButtonVariant, IconButtonSize } from "@ui/icon_button.slint";
+
+// Title row with an optional back button and an optional trailing icon button.
+export component PageHeader inherits HorizontalLayout {
+    in property <string> title;
+    in property <bool> show-back: true;
+    in property <string> trailing-icon: "";
+    in property <string> trailing-label: "";
+    callback back();
+    callback trailing();
+
+    spacing: Theme.spacing-md;
+    height: 56px;
+
+    // IconButton centres its visual but anchors its touch area at its left edge, so it must
+    // not be stretched by the layout: pin it to its control size.
+    if root.show-back: IconButton {
+        width: Theme.control-size-md;
+        height: Theme.control-size-md;
+        icon: Images.icon("chevron-left", 24px);
+        label: "Back";
+        variant: IconButtonVariant.ghost;
+        size: IconButtonSize.md;
+        clicked => {
+            root.back();
+        }
+    }
+
+    Text {
+        horizontal-stretch: 1;
+        text: root.title;
+        color: Theme.palette-foreground;
+        font-family: Theme.font-primary;
+        font-size: Theme.font-size-title;
+        font-weight: Theme.font-weight-bold;
+        vertical-alignment: center;
+        overflow: elide;
+    }
+
+    if root.trailing-icon != "": IconButton {
+        width: Theme.control-size-md;
+        height: Theme.control-size-md;
+        icon: Images.icon(root.trailing-icon, 24px);
+        label: root.trailing-label;
+        variant: IconButtonVariant.ghost;
+        size: IconButtonSize.md;
+        clicked => {
+            root.trailing();
+        }
+    }
+}
+
+// A QR code on a white plate, shown at its native pixel size: Rust renders it at an integer
+// number of pixels per module, so no scaling blurs or unevens the modules. Codes are always
+// dark-on-white, whatever the theme, because inverted codes are not reliably scanned.
+export component QrPlate inherits Rectangle {
+    in property <image> code;
+    in property <length> inset: 10px;
+
+    width: root.code.width * 1px + 2 * root.inset;
+    height: root.code.height * 1px + 2 * root.inset;
+    background: #ffffff;
+    border-radius: Theme.radius-md;
+
+    Image {
+        x: root.inset;
+        y: root.inset;
+        width: root.code.width * 1px;
+        height: root.code.height * 1px;
+        source: root.code;
+        image-rendering: pixelated;
+    }
+}
+
+// An address split into 4-character groups, for reading and comparing aloud.
+export component AddressGroups inherits Rectangle {
+    in property <[string]> groups;
+    in property <int> columns: 5;
+
+    background: Theme.palette-secondary.with-alpha(Theme.is-dark ? 0.25 : 0.35);
+    border-radius: Theme.radius-md;
+    height: layout.preferred-height;
+
+    layout := VerticalLayout {
+        padding: Theme.spacing-md;
+        spacing: 4px;
+
+        for row-index in ceil(root.groups.length / root.columns): HorizontalLayout {
+            spacing: Theme.spacing-sm;
+            alignment: center;
+
+            for col-index in root.columns: Text {
+                property <int> index: row-index * root.columns + col-index;
+                width: 62px;
+                text: self.index < root.groups.length ? root.groups[self.index] : "";
+                color: Theme.palette-foreground;
+                font-family: "Source Code Pro";
+                font-size: 20px;
+                horizontal-alignment: center;
+            }
+        }
+    }
+}
+
+// Section caption in the house style (small, muted, upper case).
+export component SectionLabel inherits Text {
+    color: Theme.palette-muted;
+    font-family: Theme.font-primary;
+    font-size: Theme.font-size-label;
+    font-weight: Theme.font-weight-semibold;
+}
+
+// Body copy that wraps.
+export component BodyText inherits Text {
+    color: Theme.palette-foreground;
+    font-family: Theme.font-primary;
+    font-size: Theme.font-size-subtitle;
+    wrap: word-wrap;
+}
+
+export component MutedText inherits Text {
+    color: Theme.palette-muted;
+    font-family: Theme.font-primary;
+    font-size: Theme.font-size-helper;
+    wrap: word-wrap;
+}
+
+// Top/side/bottom padding shared by every page.
+export global Gaps {
+    out property <length> side: Theme.spacing-xl;
+    out property <length> top: Theme.spacing-md + UISize.control-center-status-bar-height;
+    out property <length> bottom: Theme.spacing-xl;
+}
